@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CentralBankRate.UI", "CentralBankRate.UI\CentralBankRate.UI.csproj", "{EC02F788-A1BF-43C8-9981-2691AA302BBD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CentralBankRate.Core", "CentralBankRate.Core\CentralBankRate.Core.csproj", "{D07B8433-9D31-4307-BFEA-FC66370318EB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EC02F788-A1BF-43C8-9981-2691AA302BBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC02F788-A1BF-43C8-9981-2691AA302BBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC02F788-A1BF-43C8-9981-2691AA302BBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC02F788-A1BF-43C8-9981-2691AA302BBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D07B8433-9D31-4307-BFEA-FC66370318EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D07B8433-9D31-4307-BFEA-FC66370318EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D07B8433-9D31-4307-BFEA-FC66370318EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D07B8433-9D31-4307-BFEA-FC66370318EB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
