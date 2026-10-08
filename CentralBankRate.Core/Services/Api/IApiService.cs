@@ -4,5 +4,5 @@ namespace CentralBankRate.Core.Services.Api;
 
 public interface IApiService
 { 
-    Task<ApiResponse<string>> GetValutes(DateOnly date);
+    Task<Result<string>> GetValutes(DateOnly date);
 }

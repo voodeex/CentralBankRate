@@ -11,22 +11,22 @@ public class ApiService : IApiService
         _httpClient = httpClient;
     }
     
-    public async Task<ApiResponse<string>> GetValutes(DateOnly date)
+    public async Task<Result<string>> GetValutes(DateOnly date)
     {
         var response = 
             await _httpClient.GetAsync($"https://cbr.ru/scripts/XML_daily.asp?date_req={date}");
 
         if (!response.IsSuccessStatusCode)
         {
-            return ApiResponse<string>.Failure(response.ReasonPhrase);
+            return Result<string>.Failure(response.ReasonPhrase);
         }
 
         string xml = await response.Content.ReadAsStringAsync();
 
         if (string.IsNullOrWhiteSpace(xml))
         {
-            return ApiResponse<string>.Failure("Пустой ответ");
+            return Result<string>.Failure("Пустой ответ");
         }
-        return ApiResponse<string>.Success(xml);
+        return Result<string>.Success(xml);
     }
 }
