@@ -2,13 +2,13 @@ namespace CentralBankRate.Core.Models;
 
 public class ReportData
 {
-    public DateOnly ActualDate { get; private set; }
-    public DateOnly PreviousDate { get; private set; }
+    public DateOnly ActualDate { get; init; }
+    public DateOnly PreviousDate { get; init; }
     
-    public IReadOnlyList<CurrentRateChange> Rates { get; private set; }
+    public IReadOnlyList<CurrentRateChange> Rates { get; init; }
     
-    public IReadOnlyList<CurrentRateChange> TopGainers { get; private set; }
-    public IReadOnlyList<CurrentRateChange> TopLosers { get; private set; }
+    public IReadOnlyList<CurrentRateChange> TopGainers { get; init; }
+    public IReadOnlyList<CurrentRateChange> TopLosers { get; init; }
     
     
 }
