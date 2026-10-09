@@ -1,4 +1,5 @@
 using CentralBankRate.Core.Models;
+using System.Text;
 
 namespace CentralBankRate.Core.Services.Api;
 
@@ -21,6 +22,9 @@ public class ApiService : IApiService
             return Result<string>.Failure(response.ReasonPhrase);
         }
 
+        // Регистрация кодировщика для поддержки windows-1251
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        
         string xml = await response.Content.ReadAsStringAsync();
 
         if (string.IsNullOrWhiteSpace(xml))
