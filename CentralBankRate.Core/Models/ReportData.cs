@@ -10,5 +10,5 @@ public class ReportData
     public IReadOnlyList<CurrentRateChange> TopGainers { get; init; }
     public IReadOnlyList<CurrentRateChange> TopLosers { get; init; }
     
-    
+    public decimal AverrageRateChange { get; init; }
 }
