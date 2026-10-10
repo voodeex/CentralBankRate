@@ -16,6 +16,6 @@ public class ValuteXmlDto
     public string Name { get;  set; }
     [XmlElement("Value")]
     public string? Value { get;  set; }
-    [XmlElement("UnitRate")]
+    [XmlElement("VunitRate")]
     public string? UnitRate { get;  set; }
 }

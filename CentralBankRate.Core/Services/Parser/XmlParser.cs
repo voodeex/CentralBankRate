@@ -22,7 +22,7 @@ public class XmlParser : IParser
 
         if (!DateOnly.TryParseExact(
           dto.DateText,
-          "dd/MM/yyyy",
+          "dd.MM.yyyy",
           CultureInfo.InvariantCulture, 
           DateTimeStyles.None,
           out var date))
