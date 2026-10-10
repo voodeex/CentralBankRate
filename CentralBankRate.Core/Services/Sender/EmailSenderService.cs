@@ -20,7 +20,8 @@ public sealed class EmailSenderService : ISenderService
         _settings = settings;
     }
 
-    public async Task<Result<bool>> SendAsync(string recipient, string subject, string textBody, byte[]? pdfBytes, string attachmentName)
+    public async Task<Result<bool>> SendAsync(string recipient, string subject, string textBody, byte[]? pdfBytes, string attachmentName,
+        CancellationToken cancellationToken = default)
     {
 
         if (string.IsNullOrWhiteSpace(_settings.Host)
@@ -91,15 +92,19 @@ public sealed class EmailSenderService : ISenderService
 
         try
         {
-            await smtpClient.ConnectAsync(_settings.Host, _settings.Port, security);
+            await smtpClient.ConnectAsync(_settings.Host, _settings.Port, security, cancellationToken);
 
-            await smtpClient.AuthenticateAsync(_settings.Username, _settings.Password);
+            await smtpClient.AuthenticateAsync(_settings.Username, _settings.Password, cancellationToken);
 
-            await smtpClient.SendAsync(message);
+            await smtpClient.SendAsync(message, cancellationToken);
 
             return Result<bool>.Success(true);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return Result<bool>.Failure("Отправка письма отменена.");
+        }
+        catch (Exception exception) when (exception is TimeoutException or OperationCanceledException)
         {
             return Result<bool>.Failure("Превышено время ожидания SMTP. Не удалось подтвердить отправку письма.");
         }
@@ -113,7 +118,8 @@ public sealed class EmailSenderService : ISenderService
         }
         catch (SmtpCommandException exception)
         {
-            return Result<bool>.Failure($"SMTP-сервер отклонил команду. Код ответа: {exception.StatusCode}.");
+            return Result<bool>.Failure(
+                $"SMTP-сервер отклонил команду. Код ответа: {(int)exception.StatusCode} ({exception.StatusCode}). {exception.Message}");
         }
         catch (NotSupportedException)
         {
@@ -121,7 +127,8 @@ public sealed class EmailSenderService : ISenderService
         }
         catch (Exception exception)
         {
-            return Result<bool>.Failure("Ошибка соединения с SMTP-сервером. Не удалось подтвердить отправку письма.");
+            return Result<bool>.Failure(
+                $"Ошибка соединения с SMTP-сервером. Не удалось подтвердить отправку письма. {exception.Message}");
         }
     }
 }

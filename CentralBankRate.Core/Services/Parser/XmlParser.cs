@@ -7,18 +7,33 @@ namespace CentralBankRate.Core.Services.Parser;
 
 public class XmlParser : IParser
 {
+    private static readonly XmlSerializer Serializer = new(typeof(ValCursXmlDto));
+
     public Result<ValCurs> Parse(string data)
     {
-        var serialiazer = new XmlSerializer(typeof(ValCursXmlDto));
+        ValCursXmlDto? dto;
+        try
+        {
+            using var reader = new StringReader(data);
+            dto = (ValCursXmlDto?)Serializer.Deserialize(reader);
+        }
+        catch (InvalidOperationException exception)
+        {
+            // XmlSerializer заворачивает ошибку разбора в InvalidOperationException, суть — во внутреннем исключении
+            return Result<ValCurs>.Failure(
+                $"Ответ ЦБ РФ не является корректным XML: {exception.InnerException?.Message ?? exception.Message}");
+        }
 
-        using var reader = new StringReader(data);
-        var dto = (ValCursXmlDto?)serialiazer.Deserialize(reader);
-        if (dto.Rates is null)
+        if (dto is null)
         {
             return Result<ValCurs>.Failure("Ответ сервиса отсутствует");
         }
 
-        
+        if (dto.DateText is null)
+        {
+            var error = string.IsNullOrWhiteSpace(dto.ErrorText) ? "в ответе нет даты курсов" : dto.ErrorText.Trim();
+            return Result<ValCurs>.Failure($"ЦБ РФ вернул ошибку: {error}");
+        }
 
         if (!DateOnly.TryParseExact(
           dto.DateText,
@@ -27,10 +42,10 @@ public class XmlParser : IParser
           DateTimeStyles.None,
           out var date))
         {
-            return Result<ValCurs>.Failure("Некорректная дата курсов");
+            return Result<ValCurs>.Failure($"Некорректная дата курсов: {dto.DateText}");
         }
         
-        if (dto.DateText is null || dto.Rates.Count == 0)
+        if (dto.Rates is null || dto.Rates.Count == 0)
         {
             return Result<ValCurs>.Failure("Список валют пуст");
         }

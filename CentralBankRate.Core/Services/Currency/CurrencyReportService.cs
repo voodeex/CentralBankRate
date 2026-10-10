@@ -21,33 +21,43 @@ public class CurrencyReportService : ICurrencyReportService
         _senderService = senderService;
     }
     
-    public async Task<Result<ReportData>> LoadReport(DateOnly date)
+    public async Task<Result<ReportData>> LoadReport(DateOnly date, CancellationToken cancellationToken = default)
     {
-       var result =  await _apiService.GetValutes(date);
-       if (!result.IsSuccess || result.Value is null)
-       {
-           return Result<ReportData>.Failure("Ошибка загрузки репорта");
-       }
-       var currentData =  _parser.Parse(result.Value);
+       var currentData = await LoadRates(date, cancellationToken);
        if (!currentData.IsSuccess || currentData.Value is null)
        {
-           return Result<ReportData>.Failure("Ошибка парсинга репорта");
+           return Result<ReportData>.Failure(currentData.Error ?? "Не удалось загрузить курсы");
        }
-       
-       result =  await _apiService.GetValutes(date.AddDays(-1));
-       if (!result.IsSuccess || result.Value is null)
-       {
-           return Result<ReportData>.Failure("Ошибка загрузки репорта");
-       }
-       var previousData =  _parser.Parse(result.Value);
+
+       // На выходные и праздники ЦБ курс не устанавливает и отдаёт последний действующий.
+       // Поэтому предыдущий день отсчитываем от фактической даты курса, а не от запрошенной:
+       // иначе в воскресенье и понедельник суббота сравнивалась бы сама с собой
+       var previousData = await LoadRates(currentData.Value.Date.AddDays(-1), cancellationToken);
        if (!previousData.IsSuccess || previousData.Value is null)
        {
-           return Result<ReportData>.Failure("Ошибка парсинга репорта");
+           return Result<ReportData>.Failure(previousData.Error ?? "Не удалось загрузить курсы");
        }
        
        ReportData report = CalculateReportData(currentData.Value, previousData.Value);
        
        return Result<ReportData>.Success(report);
+    }
+
+    private async Task<Result<ValCurs>> LoadRates(DateOnly date, CancellationToken cancellationToken)
+    {
+        var response = await _apiService.GetValutes(date, cancellationToken);
+        if (!response.IsSuccess || response.Value is null)
+        {
+            return Result<ValCurs>.Failure($"Не удалось загрузить курсы на {date:dd.MM.yyyy}. {response.Error}");
+        }
+
+        var parsed = _parser.Parse(response.Value);
+        if (!parsed.IsSuccess || parsed.Value is null)
+        {
+            return Result<ValCurs>.Failure($"Не удалось разобрать курсы на {date:dd.MM.yyyy}. {parsed.Error}");
+        }
+
+        return parsed;
     }
 
     private static ReportData CalculateReportData(ValCurs current, ValCurs previous)
@@ -90,13 +100,23 @@ public class CurrencyReportService : ICurrencyReportService
         return data;
     }
 
-    public async Task<Result<bool>>  SendReport(ReportData data, string email)
+    public async Task<Result<bool>> SendReport(ReportData data, string email, CancellationToken cancellationToken = default)
     {
-        var document = _reportService.GenerateReport(data);
-        var result =await _senderService.SendAsync(email,$"Отчет по курсу валют за {data.ActualDate}","" , document, $"Отчет по курсу валют за {data.ActualDate}.pdf" );
+        byte[] document;
+        try
+        {
+            document = _reportService.GenerateReport(data);
+        }
+        catch (Exception exception)
+        {
+            return Result<bool>.Failure($"Не удалось сформировать PDF-отчёт: {exception.Message}");
+        }
+
+        var result = await _senderService.SendAsync(email, $"Отчет по курсу валют за {data.ActualDate}", "", document,
+            $"Отчет по курсу валют за {data.ActualDate}.pdf", cancellationToken);
         if (!result.IsSuccess)
         {
-            return Result<bool>.Failure(result.Error);
+            return Result<bool>.Failure(result.Error ?? "Не удалось отправить отчёт");
         }
         return Result<bool>.Success(true);
     }

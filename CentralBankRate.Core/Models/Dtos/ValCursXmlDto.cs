@@ -11,4 +11,7 @@ public class ValCursXmlDto
     public List<ValuteXmlDto> Rates { get; set; } = new();
     [XmlAttribute("name")]
     public string Name { get;  set; }
+    // На некорректный запрос ЦБ отвечает HTTP 200 и телом <ValCurs>Error in parameters</ValCurs>
+    [XmlText]
+    public string? ErrorText { get; set; }
 }

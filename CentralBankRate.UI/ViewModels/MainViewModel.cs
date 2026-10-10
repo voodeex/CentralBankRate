@@ -241,7 +241,7 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsNothingFound));
     }
 
-    private void ShowError(string message)
+    public void ShowError(string message)
     {
         NotificationText = message;
         NotificationKind = NotificationKind.Error;
