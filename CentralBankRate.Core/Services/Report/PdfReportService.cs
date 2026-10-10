@@ -1,3 +1,4 @@
+using CentralBankRate.Core.Formatting;
 using CentralBankRate.Core.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -31,7 +32,7 @@ public class PdfReportService : IReportService
 
                         column.Item()
                             .PaddingTop(5)
-                            .Text($"Дата: {data.ActualDate}")
+                            .Text($"Курсы на {data.ActualDate:dd.MM.yyyy} · изменение к {data.PreviousDate:dd.MM.yyyy}")
                             .FontSize(12);
                     });
 
@@ -50,10 +51,10 @@ public class PdfReportService : IReportService
                         {
                             table.ColumnsDefinition(columns =>
                             {
-                                columns.ConstantColumn(60);
+                                columns.ConstantColumn(50);
                                 columns.RelativeColumn();
-                                columns.ConstantColumn(90);
-                                columns.ConstantColumn(90);
+                                columns.ConstantColumn(125);
+                                columns.ConstantColumn(80);
                             });
 
                             table.Header(header =>
@@ -66,7 +67,7 @@ public class PdfReportService : IReportService
 
                                 header.Cell().BorderBottom(2).Padding(8)
                                     .AlignRight()
-                                    .Text("Курс, руб").SemiBold();
+                                    .Text("Курс за 1 ед., руб.").SemiBold();
 
                                 header.Cell().BorderBottom(2).Padding(8)
                                     .AlignRight()
@@ -80,14 +81,26 @@ public class PdfReportService : IReportService
 
                                 table.Cell().Padding(8)
                                     .Text(item.Rate.Name);
+                                
+                                table.Cell().Padding(8)
+                                    .AlignRight()
+                                    .Column(rate =>
+                                    {
+                                        rate.Item().AlignRight()
+                                            .Text(RateFormat.UnitRate(item.Rate.UnitRate));
+
+                                        if (item.Rate.Nominal != 1)
+                                        {
+                                            rate.Item().AlignRight()
+                                                .Text(RateFormat.NominalRate(item.Rate.Value, item.Rate.Nominal))
+                                                .FontSize(8)
+                                                .FontColor(Colors.Grey.Darken1);
+                                        }
+                                    });
 
                                 table.Cell().Padding(8)
                                     .AlignRight()
-                                    .Text($"{item.Rate.Value:F2}");
-
-                                table.Cell().Padding(8)
-                                    .AlignRight()
-                                    .Text($"{item.ChangePercent:F2}%");
+                                    .Text(RateFormat.Change(item.ChangePercent));
                             }
                         });
 
@@ -102,7 +115,7 @@ public class PdfReportService : IReportService
                             .SemiBold()
                             .FontSize(14);
 
-                        foreach (var item in data.TopGainers.Take(3))
+                        foreach (var item in data.TopGainers)
                         {
                             column.Item()
                                 .Row(row =>
@@ -112,7 +125,7 @@ public class PdfReportService : IReportService
 
                                     row.ConstantItem(100)
                                         .AlignRight()
-                                        .Text($"{item.ChangePercent:F2}%");
+                                        .Text(RateFormat.Change(item.ChangePercent));
                                 });
                         }
 
@@ -122,9 +135,7 @@ public class PdfReportService : IReportService
                             .SemiBold()
                             .FontSize(14);
 
-                        foreach (var item in data.Rates
-                                     .OrderBy(x => x.ChangePercent)
-                                     .Take(3))
+                        foreach (var item in data.TopLosers)
                         {
                             column.Item()
                                 .Row(row =>
@@ -134,14 +145,10 @@ public class PdfReportService : IReportService
 
                                     row.ConstantItem(100)
                                         .AlignRight()
-                                        .Text($"{item.ChangePercent:F2}%");
+                                        .Text(RateFormat.Change(item.ChangePercent));
                                 });
                         }
 
-                        var averageChange = data.Rates.Any()
-                            ? data.Rates.Average(x => x.ChangePercent)
-                            : 0;
-                        
                         column.Item()
                             .PaddingTop(15)
                             .BorderTop(1)
@@ -154,7 +161,7 @@ public class PdfReportService : IReportService
 
                                 row.ConstantItem(100)
                                     .AlignRight()
-                                    .Text($"{averageChange:F2}%")
+                                    .Text(RateFormat.Change(data.AverrageRateChange))
                                     .SemiBold();
                             });
                     });
