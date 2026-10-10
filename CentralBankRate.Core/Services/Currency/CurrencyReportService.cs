@@ -1,3 +1,5 @@
+using System.Text;
+using CentralBankRate.Core.Formatting;
 using CentralBankRate.Core.Models;
 using CentralBankRate.Core.Services.Api;
 using CentralBankRate.Core.Services.Parser;
@@ -112,12 +114,47 @@ public class CurrencyReportService : ICurrencyReportService
             return Result<bool>.Failure($"Не удалось сформировать PDF-отчёт: {exception.Message}");
         }
 
-        var result = await _senderService.SendAsync(email, $"Отчет по курсу валют за {data.ActualDate}", "", document,
-            $"Отчет по курсу валют за {data.ActualDate}.pdf", cancellationToken);
+        var subject = $"Курсы валют ЦБ РФ на {data.ActualDate:dd.MM.yyyy}";
+
+        var result = await _senderService.SendAsync(email, subject, BuildSummary(data), document,
+            $"{subject}.pdf", cancellationToken);
         if (!result.IsSuccess)
         {
             return Result<bool>.Failure(result.Error ?? "Не удалось отправить отчёт");
         }
         return Result<bool>.Success(true);
+    }
+
+    
+    private static string BuildSummary(ReportData data)
+    {
+        var summary = new StringBuilder();
+
+        summary.AppendLine($"Курсы валют ЦБ РФ на {data.ActualDate:dd.MM.yyyy}, изменение к {data.PreviousDate:dd.MM.yyyy}.");
+        summary.AppendLine();
+        AppendLeaders(summary, "Топ-3 роста:", data.TopGainers);
+        summary.AppendLine();
+        AppendLeaders(summary, "Топ-3 падения:", data.TopLosers);
+        summary.AppendLine();
+        summary.AppendLine("Полный отчёт по всем валютам — во вложенном PDF-файле.");
+
+        return summary.ToString();
+    }
+
+    private static void AppendLeaders(StringBuilder summary, string title, IReadOnlyList<CurrentRateChange> leaders)
+    {
+        summary.AppendLine(title);
+
+        if (leaders.Count == 0)
+        {
+            summary.AppendLine("нет данных");
+            return;
+        }
+
+        for (int i = 0; i < leaders.Count; i++)
+        {
+            var leader = leaders[i];
+            summary.AppendLine($"{i + 1}. {leader.Rate.CharCode} — {leader.Rate.Name}: {RateFormat.Change(leader.ChangePercent)}");
+        }
     }
 }
