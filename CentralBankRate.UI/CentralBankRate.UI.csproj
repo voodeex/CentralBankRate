@@ -7,18 +7,31 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <AvaloniaResource Include="Assets\**"/>
+        <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.1.3"/>
-        <PackageReference Include="Avalonia.Desktop" Version="12.1.3"/>
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3"/>
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.3"/>
+        <PackageReference Include="Avalonia" Version="12.1.3" />
+        <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.1.3" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.3" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.3" />
         <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3">
             <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
             <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2"/>
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.20" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.20" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="..\CentralBankRate.Core\config.json"
+              Link="config.json"
+              CopyToOutputDirectory="PreserveNewest"
+              CopyToPublishDirectory="Never"
+              Condition="Exists('..\CentralBankRate.Core\config.json')" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\CentralBankRate.Core\CentralBankRate.Core.csproj" />
     </ItemGroup>
 </Project>
