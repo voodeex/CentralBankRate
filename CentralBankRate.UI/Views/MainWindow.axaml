@@ -1,13 +1,17 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:CentralBankRate.UI.ViewModels"
+        xmlns:c="using:CentralBankRate.UI.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1180" d:DesignHeight="760"
         x:Class="CentralBankRate.UI.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="CentralBankRate.UI">
+        Title="Курсы валют ЦБ РФ"
+        Width="1180" Height="760"
+        MinWidth="1000" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource AppBackgroundBrush}">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -15,8 +19,520 @@
         <vm:MainViewModel />
     </Design.DataContext>
 
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+    <Window.KeyBindings>
+        <KeyBinding Gesture="F5" Command="{Binding LoadCommand}" />
+    </Window.KeyBindings>
 
+    <Window.Resources>
+        <!-- Плашка изменения курса: ▲ зелёная, ▼ красная, без изменений — серая.
+             Видна только одна из трёх, цвет текста и иконки задаёт TextElement.Foreground -->
+        <DataTemplate x:Key="ChangePillTemplate" x:DataType="vm:RateRowViewModel">
+            <Panel>
+                <Border Theme="{StaticResource Pill}"
+                        Background="{DynamicResource PositiveSoftBrush}"
+                        TextElement.Foreground="{DynamicResource PositiveBrush}"
+                        IsVisible="{Binding IsUp}">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <c:Icon Data="{StaticResource IconArrowUp}" Width="12" Height="12" VerticalAlignment="Center" />
+                        <TextBlock Theme="{StaticResource PillText}" Text="{Binding ChangeText}" />
+                    </StackPanel>
+                </Border>
+                <Border Theme="{StaticResource Pill}"
+                        Background="{DynamicResource NegativeSoftBrush}"
+                        TextElement.Foreground="{DynamicResource NegativeBrush}"
+                        IsVisible="{Binding IsDown}">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <c:Icon Data="{StaticResource IconArrowDown}" Width="12" Height="12" VerticalAlignment="Center" />
+                        <TextBlock Theme="{StaticResource PillText}" Text="{Binding ChangeText}" />
+                    </StackPanel>
+                </Border>
+                <Border Theme="{StaticResource Pill}"
+                        Background="{DynamicResource NeutralSoftBrush}"
+                        TextElement.Foreground="{DynamicResource TextSecondaryBrush}"
+                        IsVisible="{Binding IsFlat}">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <c:Icon Data="{StaticResource IconMinus}" Width="12" Height="12" VerticalAlignment="Center" />
+                        <TextBlock Theme="{StaticResource PillText}" Text="{Binding ChangeText}" />
+                    </StackPanel>
+                </Border>
+            </Panel>
+        </DataTemplate>
+
+        <!-- Строка в блоках «Лидеры роста / падения» -->
+        <DataTemplate x:Key="LeaderTemplate" x:DataType="vm:RateRowViewModel">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Border Theme="{StaticResource Badge}" MinWidth="48">
+                    <TextBlock Theme="{StaticResource BadgeText}" Text="{Binding CharCode}" HorizontalAlignment="Center" />
+                </Border>
+                <TextBlock Grid.Column="1"
+                           Margin="10,0"
+                           VerticalAlignment="Center"
+                           FontSize="13"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           Text="{Binding Name}"
+                           TextTrimming="CharacterEllipsis"
+                           ToolTip.Tip="{Binding Name}" />
+                <ContentControl Grid.Column="2"
+                                Content="{Binding}"
+                                ContentTemplate="{StaticResource ChangePillTemplate}" />
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <DockPanel>
+
+        <!-- ═════════ Шапка ═════════ -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="24,16">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Border Width="42" Height="42"
+                        CornerRadius="11"
+                        Background="{StaticResource LogoBrush}"
+                        BoxShadow="0 4 12 0 #401D4ED8">
+                    <TextBlock Text="₽"
+                               FontSize="22"
+                               FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Border>
+
+                <StackPanel Grid.Column="1" Margin="14,0,0,0" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock Theme="{StaticResource TitleText}" Text="Курсы валют ЦБ РФ" />
+                    <TextBlock Theme="{StaticResource CaptionText}" Text="Официальные курсы Банка России · PDF-отчёт с отправкой по почте" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            Spacing="8"
+                            VerticalAlignment="Center"
+                            IsVisible="{Binding HasReport}">
+                    <Border Theme="{StaticResource Chip}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <c:Icon Data="{StaticResource IconCalendar}" Width="14" Height="14" VerticalAlignment="Center"
+                                    Foreground="{DynamicResource TextSecondaryBrush}" />
+                            <TextBlock Theme="{StaticResource CaptionText}" Text="Курсы на" VerticalAlignment="Center" />
+                            <TextBlock FontFeatures="+tnum"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       Text="{Binding RatesDateText}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Border Theme="{StaticResource Chip}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <c:Icon Data="{StaticResource IconCompare}" Width="14" Height="14" VerticalAlignment="Center"
+                                    Foreground="{DynamicResource TextSecondaryBrush}" />
+                            <TextBlock Theme="{StaticResource CaptionText}" Text="Сравнение с" VerticalAlignment="Center" />
+                            <TextBlock FontFeatures="+tnum"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       Text="{Binding PreviousDateText}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═════════ Строка состояния ═════════ -->
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="24,9">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Panel VerticalAlignment="Center">
+                    <Ellipse Width="8" Height="8" Fill="{DynamicResource PositiveBrush}" IsVisible="{Binding IsStatusOk}" />
+                    <Ellipse Width="8" Height="8" Fill="{DynamicResource NegativeBrush}" IsVisible="{Binding IsStatusError}" />
+                    <Ellipse Width="8" Height="8" Fill="{DynamicResource BrandBrush}" IsVisible="{Binding IsBusy}" />
+                </Panel>
+                <TextBlock Grid.Column="1"
+                           Theme="{StaticResource CaptionText}"
+                           Margin="10,0,0,0"
+                           VerticalAlignment="Center"
+                           Text="{Binding StatusText}"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="2"
+                           Theme="{StaticResource CaptionText}"
+                           VerticalAlignment="Center"
+                           Text="Источник данных: cbr.ru/scripts/XML_daily.asp" />
+            </Grid>
+        </Border>
+
+        <!-- ═════════ Основная область ═════════ -->
+        <Grid Margin="24,20" RowDefinitions="Auto,Auto,Auto,*">
+
+            <!-- Панель действий -->
+            <Border Theme="{StaticResource Card}" Padding="20,16">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                    <StackPanel>
+                        <TextBlock Theme="{StaticResource LabelText}" Text="Дата курсов" />
+                        <CalendarDatePicker Width="190"
+                                            SelectedDate="{Binding SelectedDate}"
+                                            DisplayDateEnd="{Binding MaxDate}"
+                                            FirstDayOfWeek="Monday"
+                                            IsTodayHighlighted="True"
+                                            PlaceholderText="дд.мм.гггг" />
+                    </StackPanel>
+
+                    <Button Grid.Column="1"
+                            Theme="{StaticResource PrimaryButton}"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Bottom"
+                            Command="{Binding LoadCommand}"
+                            ToolTip.Tip="Загрузить курсы на выбранную дату и предыдущий день (F5)">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <c:Icon Data="{StaticResource IconDownload}" VerticalAlignment="Center" />
+                            <TextBlock Text="Загрузить данные" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Theme="{StaticResource LabelText}" Text="Получатель отчёта" />
+                        <TextBox Width="300"
+                                 Text="{Binding RecipientEmail}"
+                                 PlaceholderText="name@example.com">
+                            <TextBox.InnerLeftContent>
+                                <c:Icon Data="{StaticResource IconMail}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                        Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </TextBox.InnerLeftContent>
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding SendCommand}" />
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                    </StackPanel>
+
+                    <Button Grid.Column="4"
+                            Theme="{StaticResource PrimaryButton}"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Bottom"
+                            Command="{Binding SendCommand}"
+                            ToolTip.Tip="Сформировать PDF-отчёт и отправить его на указанный адрес">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <c:Icon Data="{StaticResource IconSend}" VerticalAlignment="Center" />
+                            <TextBlock Text="Отправить отчёт" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Ошибка -->
+            <Border Grid.Row="1"
+                    Theme="{StaticResource Banner}"
+                    Background="{DynamicResource NegativeSoftBrush}"
+                    BorderBrush="{DynamicResource NegativeBrush}"
+                    IsVisible="{Binding IsErrorNotification}">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <c:Icon Data="{StaticResource IconAlert}" Width="18" Height="18" VerticalAlignment="Center"
+                            Foreground="{DynamicResource NegativeBrush}" />
+                    <SelectableTextBlock Grid.Column="1"
+                                         Margin="10,0"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource TextPrimaryBrush}"
+                                         Text="{Binding NotificationText}"
+                                         TextWrapping="Wrap" />
+                    <Button Grid.Column="2"
+                            Theme="{StaticResource GhostButton}"
+                            Command="{Binding DismissNotificationCommand}"
+                            ToolTip.Tip="Скрыть">
+                        <c:Icon Data="{StaticResource IconClose}" Width="14" Height="14" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Успех -->
+            <Border Grid.Row="1"
+                    Theme="{StaticResource Banner}"
+                    Background="{DynamicResource PositiveSoftBrush}"
+                    BorderBrush="{DynamicResource PositiveBrush}"
+                    IsVisible="{Binding IsSuccessNotification}">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <c:Icon Data="{StaticResource IconCheck}" Width="18" Height="18" VerticalAlignment="Center"
+                            Foreground="{DynamicResource PositiveBrush}" />
+                    <SelectableTextBlock Grid.Column="1"
+                                         Margin="10,0"
+                                         VerticalAlignment="Center"
+                                         Foreground="{DynamicResource TextPrimaryBrush}"
+                                         Text="{Binding NotificationText}"
+                                         TextWrapping="Wrap" />
+                    <Button Grid.Column="2"
+                            Theme="{StaticResource GhostButton}"
+                            Command="{Binding DismissNotificationCommand}"
+                            ToolTip.Tip="Скрыть">
+                        <c:Icon Data="{StaticResource IconClose}" Width="14" Height="14" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Подсказка, если ЦБ не устанавливал курс на выбранную дату -->
+            <Border Grid.Row="2"
+                    Theme="{StaticResource Banner}"
+                    Background="{DynamicResource WarningSoftBrush}"
+                    BorderBrush="Transparent"
+                    IsVisible="{Binding IsDateShifted}">
+                <Grid ColumnDefinitions="Auto,*">
+                    <c:Icon Data="{StaticResource IconInfo}" Width="18" Height="18" VerticalAlignment="Center"
+                            Foreground="{DynamicResource WarningBrush}" />
+                    <TextBlock Grid.Column="1"
+                               Margin="10,0"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               Text="{Binding DateShiftText}"
+                               TextWrapping="Wrap" />
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="3" Margin="0,16,0,0" ColumnDefinitions="*,16,300">
+
+                <!-- Таблица курсов -->
+                <Border Theme="{StaticResource Card}" ClipToBounds="True">
+                    <Grid RowDefinitions="Auto,Auto,*">
+                        <Grid Margin="20,14" ColumnDefinitions="*,Auto">
+                            <StackPanel Margin="0,0,12,0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Theme="{StaticResource SectionText}" Text="Курсы валют" VerticalAlignment="Center" />
+                                    <Border Theme="{StaticResource Badge}" IsVisible="{Binding HasReport}">
+                                        <TextBlock Theme="{StaticResource BadgeText}" Text="{Binding RatesCountText}" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Theme="{StaticResource CaptionText}"
+                                           IsVisible="{Binding HasReport}"
+                                           Text="{Binding PreviousDateText, StringFormat='Курс за 1 единицу, ₽ · изменение к {0}'}"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Theme="{StaticResource CaptionText}"
+                                           IsVisible="{Binding !HasReport}"
+                                           Text="Курс за 1 единицу, ₽"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <TextBox Grid.Column="1"
+                                     Width="240"
+                                     VerticalAlignment="Center"
+                                     PlaceholderText="Код или название"
+                                     Text="{Binding SearchText}"
+                                     IsVisible="{Binding HasReport}">
+                                <TextBox.InnerLeftContent>
+                                    <c:Icon Data="{StaticResource IconSearch}" Margin="10,0,0,0" VerticalAlignment="Center"
+                                            Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </TextBox.InnerLeftContent>
+                                <TextBox.InnerRightContent>
+                                    <Button Theme="{StaticResource GhostButton}"
+                                            Margin="0,0,4,0"
+                                            Command="{Binding ClearSearchCommand}"
+                                            IsVisible="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                            ToolTip.Tip="Очистить">
+                                        <c:Icon Data="{StaticResource IconClose}" Width="12" Height="12" />
+                                    </Button>
+                                </TextBox.InnerRightContent>
+                            </TextBox>
+                        </Grid>
+
+                        <!-- Разделитель, он же индикатор выполнения -->
+                        <Panel Grid.Row="1" Height="2">
+                            <Border Height="1" VerticalAlignment="Top" Background="{DynamicResource CardBorderBrush}" />
+                            <ProgressBar Height="2"
+                                         MinHeight="2"
+                                         CornerRadius="0"
+                                         Background="Transparent"
+                                         IsIndeterminate="True"
+                                         IsVisible="{Binding IsBusy}" />
+                        </Panel>
+
+                        <Panel Grid.Row="2">
+                            <DataGrid ItemsSource="{Binding Rates}"
+                                      IsVisible="{Binding HasReport}"
+                                      IsReadOnly="True"
+                                      CanUserSortColumns="True"
+                                      CanUserReorderColumns="False"
+                                      CanUserResizeColumns="True"
+                                      SelectionMode="Single"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal"
+                                      RowHeight="48"
+                                      ColumnHeaderHeight="38">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Код" Width="96" SortMemberPath="CharCode">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:RateRowViewModel">
+                                                <Border Theme="{StaticResource Badge}">
+                                                    <TextBlock Theme="{StaticResource BadgeText}" Text="{Binding CharCode}" />
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="Название" Width="*" MinWidth="200" SortMemberPath="Name">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:RateRowViewModel">
+                                                <TextBlock VerticalAlignment="Center"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           Text="{Binding Name}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip.Tip="{Binding Name}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Width="170" SortMemberPath="UnitRate">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Text="Курс, ₽" HorizontalAlignment="Right" />
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:RateRowViewModel">
+                                                <StackPanel Margin="0,0,16,0" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                    <TextBlock FontFeatures="+tnum"
+                                                               HorizontalAlignment="Right"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                               Text="{Binding UnitRateText}" />
+                                                    <TextBlock Theme="{StaticResource CaptionText}"
+                                                               FontFeatures="+tnum"
+                                                               HorizontalAlignment="Right"
+                                                               FontSize="11"
+                                                               IsVisible="{Binding HasNominal}"
+                                                               Text="{Binding NominalText}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Width="140" SortMemberPath="ChangePercent">
+                                        <DataGridTemplateColumn.Header>
+                                            <TextBlock Text="Изменение" HorizontalAlignment="Right" />
+                                        </DataGridTemplateColumn.Header>
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:RateRowViewModel">
+                                                <ContentControl Margin="0,0,16,0"
+                                                                HorizontalAlignment="Right"
+                                                                VerticalAlignment="Center"
+                                                                Content="{Binding}"
+                                                                ContentTemplate="{StaticResource ChangePillTemplate}" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Пустое состояние: данных ещё нет -->
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+                                <StackPanel.IsVisible>
+                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                        <Binding Path="!HasReport" />
+                                        <Binding Path="!IsBusy" />
+                                    </MultiBinding>
+                                </StackPanel.IsVisible>
+                                <Border Width="60" Height="60"
+                                        CornerRadius="30"
+                                        HorizontalAlignment="Center"
+                                        Background="{DynamicResource BrandSoftBrush}">
+                                    <c:Icon Data="{StaticResource IconChart}"
+                                            Width="28" Height="28"
+                                            Foreground="{DynamicResource BrandBrush}"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center" />
+                                </Border>
+                                <TextBlock Theme="{StaticResource SectionText}" Text="Данных пока нет" HorizontalAlignment="Center" />
+                                <TextBlock Theme="{StaticResource CaptionText}"
+                                           TextAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           Text="Выберите дату и нажмите «Загрузить данные» —&#10;курсы загрузятся с сайта ЦБ РФ" />
+                            </StackPanel>
+
+                            <!-- Первая загрузка -->
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                                <StackPanel.IsVisible>
+                                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                        <Binding Path="!HasReport" />
+                                        <Binding Path="IsBusy" />
+                                    </MultiBinding>
+                                </StackPanel.IsVisible>
+                                <ProgressBar Width="220" IsIndeterminate="True" />
+                                <TextBlock Theme="{StaticResource CaptionText}" Text="Загружаем курсы с сайта ЦБ РФ…" HorizontalAlignment="Center" />
+                            </StackPanel>
+
+                            <!-- Поиск ничего не нашёл -->
+                            <StackPanel HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Spacing="6"
+                                        IsVisible="{Binding IsNothingFound}">
+                                <TextBlock Theme="{StaticResource SectionText}" Text="Ничего не найдено" HorizontalAlignment="Center" />
+                                <TextBlock Theme="{StaticResource CaptionText}" Text="Попробуйте изменить запрос" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Panel>
+                    </Grid>
+                </Border>
+
+                <!-- Итоги дня -->
+                <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="16">
+                        <Border Theme="{StaticResource Card}" Padding="18">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Width="34" Height="34"
+                                            CornerRadius="9"
+                                            Background="{DynamicResource PositiveSoftBrush}">
+                                        <c:Icon Data="{StaticResource IconTrendUp}"
+                                                Width="18" Height="18"
+                                                Foreground="{DynamicResource PositiveBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Theme="{StaticResource SectionText}" Text="Лидеры роста" />
+                                        <TextBlock Theme="{StaticResource CaptionText}" Text="Топ-3 за день" />
+                                    </StackPanel>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding TopGainers}"
+                                              ItemTemplate="{StaticResource LeaderTemplate}"
+                                              IsVisible="{Binding HasTopGainers}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="12" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <TextBlock Theme="{StaticResource CaptionText}"
+                                           Text="{Binding LeadersPlaceholderText}"
+                                           IsVisible="{Binding !HasTopGainers}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Theme="{StaticResource Card}" Padding="18">
+                            <StackPanel Spacing="16">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Width="34" Height="34"
+                                            CornerRadius="9"
+                                            Background="{DynamicResource NegativeSoftBrush}">
+                                        <c:Icon Data="{StaticResource IconTrendDown}"
+                                                Width="18" Height="18"
+                                                Foreground="{DynamicResource NegativeBrush}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Theme="{StaticResource SectionText}" Text="Лидеры падения" />
+                                        <TextBlock Theme="{StaticResource CaptionText}" Text="Топ-3 за день" />
+                                    </StackPanel>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding TopLosers}"
+                                              ItemTemplate="{StaticResource LeaderTemplate}"
+                                              IsVisible="{Binding HasTopLosers}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Spacing="12" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+                                <TextBlock Theme="{StaticResource CaptionText}"
+                                           Text="{Binding LeadersPlaceholderText}"
+                                           IsVisible="{Binding !HasTopLosers}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </DockPanel>
 </Window>

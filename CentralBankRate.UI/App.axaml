@@ -1,10 +1,248 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:CentralBankRate.UI.Controls"
              x:Class="CentralBankRate.UI.App"
              RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+    <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
-        <FluentTheme />
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <ColorPaletteResources x:Key="Light" Accent="#1D4ED8" />
+                <ColorPaletteResources x:Key="Dark" Accent="#4F7BFF" />
+            </FluentTheme.Palettes>
+        </FluentTheme>
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+        <!-- Поля ввода одной высоты с кнопками -->
+        <Style Selector="TextBox, CalendarDatePicker">
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="MinHeight" Value="36" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- Таблица -->
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource CardBorderBrush}" />
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="Background" Value="{DynamicResource SubtleBackgroundBrush}" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Padding" Value="16,0,0,0" />
+        </Style>
+        <Style Selector="DataGridCell">
+            <Setter Property="Padding" Value="16,0" />
+        </Style>
+        <Style Selector="DataGridCell:focus /template/ Grid#FocusVisual">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
     </Application.Styles>
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F3F5F9" />
+                    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="CardBorderBrush" Color="#E3E7EE" />
+                    <SolidColorBrush x:Key="SubtleBackgroundBrush" Color="#F6F8FB" />
+                    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#161A22" />
+                    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#667085" />
+                    <SolidColorBrush x:Key="BrandBrush" Color="#1D4ED8" />
+                    <SolidColorBrush x:Key="BrandSoftBrush" Color="#E8EEFF" />
+                    <SolidColorBrush x:Key="PositiveBrush" Color="#0E7C55" />
+                    <SolidColorBrush x:Key="PositiveSoftBrush" Color="#E3F4EC" />
+                    <SolidColorBrush x:Key="NegativeBrush" Color="#C42B3E" />
+                    <SolidColorBrush x:Key="NegativeSoftBrush" Color="#FBE9EB" />
+                    <SolidColorBrush x:Key="NeutralSoftBrush" Color="#EEF1F5" />
+                    <SolidColorBrush x:Key="WarningBrush" Color="#9A6700" />
+                    <SolidColorBrush x:Key="WarningSoftBrush" Color="#FFF6DD" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0F1115" />
+                    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#181B22" />
+                    <SolidColorBrush x:Key="CardBorderBrush" Color="#272C36" />
+                    <SolidColorBrush x:Key="SubtleBackgroundBrush" Color="#1D2129" />
+                    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#E9EBEF" />
+                    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#949CAB" />
+                    <SolidColorBrush x:Key="BrandBrush" Color="#6E93FF" />
+                    <SolidColorBrush x:Key="BrandSoftBrush" Color="#1E2A4A" />
+                    <SolidColorBrush x:Key="PositiveBrush" Color="#45C98F" />
+                    <SolidColorBrush x:Key="PositiveSoftBrush" Color="#15322A" />
+                    <SolidColorBrush x:Key="NegativeBrush" Color="#FF7A8A" />
+                    <SolidColorBrush x:Key="NegativeSoftBrush" Color="#3A1D24" />
+                    <SolidColorBrush x:Key="NeutralSoftBrush" Color="#242933" />
+                    <SolidColorBrush x:Key="WarningBrush" Color="#F2C451" />
+                    <SolidColorBrush x:Key="WarningSoftBrush" Color="#352D16" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <LinearGradientBrush x:Key="LogoBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+                <GradientStop Offset="0" Color="#3B6BFF" />
+                <GradientStop Offset="1" Color="#1E3A8A" />
+            </LinearGradientBrush>
+
+            <!-- Контурные иконки в сетке 24×24 -->
+            <StreamGeometry x:Key="IconDownload">M12 3 L12 15 M7 10 L12 15 L17 10 M5 21 L19 21</StreamGeometry>
+            <StreamGeometry x:Key="IconSend">M22 2 L11 13 M22 2 L15 22 L11 13 L2 9 Z</StreamGeometry>
+            <StreamGeometry x:Key="IconSearch">M11 4 A7 7 0 1 1 11 18 A7 7 0 1 1 11 4 Z M21 21 L16 16</StreamGeometry>
+            <StreamGeometry x:Key="IconMail">M3 6 L21 6 L21 18 L3 18 Z M3 7 L12 13 L21 7</StreamGeometry>
+            <StreamGeometry x:Key="IconCalendar">M4 6 L20 6 L20 20 L4 20 Z M4 10 L20 10 M8 3 L8 7 M16 3 L16 7</StreamGeometry>
+            <StreamGeometry x:Key="IconCompare">M7 4 L3 8 L7 12 M3 8 L17 8 M17 12 L21 16 L17 20 M21 16 L7 16</StreamGeometry>
+            <StreamGeometry x:Key="IconTrendUp">M3 17 L9 11 L13 15 L21 7 M15 7 L21 7 L21 13</StreamGeometry>
+            <StreamGeometry x:Key="IconTrendDown">M3 7 L9 13 L13 9 L21 17 M15 17 L21 17 L21 11</StreamGeometry>
+            <StreamGeometry x:Key="IconArrowUp">M12 19 L12 5 M6 11 L12 5 L18 11</StreamGeometry>
+            <StreamGeometry x:Key="IconArrowDown">M12 5 L12 19 M6 13 L12 19 L18 13</StreamGeometry>
+            <StreamGeometry x:Key="IconMinus">M6 12 L18 12</StreamGeometry>
+            <StreamGeometry x:Key="IconClose">M6 6 L18 18 M18 6 L6 18</StreamGeometry>
+            <StreamGeometry x:Key="IconAlert">M12 3 A9 9 0 1 1 12 21 A9 9 0 1 1 12 3 Z M12 8 L12 12.5 M12 16 L12 16.01</StreamGeometry>
+            <StreamGeometry x:Key="IconCheck">M12 3 A9 9 0 1 1 12 21 A9 9 0 1 1 12 3 Z M8 12 L11 15 L16 9</StreamGeometry>
+            <StreamGeometry x:Key="IconInfo">M12 3 A9 9 0 1 1 12 21 A9 9 0 1 1 12 3 Z M12 11 L12 16 M12 8 L12 8.01</StreamGeometry>
+            <StreamGeometry x:Key="IconChart">M4 20 L20 20 M7 16 L7 11 M12 16 L12 6 M17 16 L17 13</StreamGeometry>
+
+            <!-- Иконка берёт цвет из Foreground родителя, если он не задан явно -->
+            <ControlTheme x:Key="{x:Type c:Icon}" TargetType="c:Icon">
+                <Setter Property="Width" Value="16" />
+                <Setter Property="Height" Value="16" />
+                <Setter Property="Template">
+                    <ControlTemplate>
+                        <Viewbox Stretch="Uniform">
+                            <Canvas Width="24" Height="24">
+                                <Path Data="{TemplateBinding Data}"
+                                      Stroke="{TemplateBinding Foreground}"
+                                      StrokeThickness="2"
+                                      StrokeLineCap="Round"
+                                      StrokeJoin="Round" />
+                            </Canvas>
+                        </Viewbox>
+                    </ControlTemplate>
+                </Setter>
+            </ControlTheme>
+
+            <!-- ═════════ Текст ═════════ -->
+            <ControlTheme x:Key="TitleText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            </ControlTheme>
+
+            <ControlTheme x:Key="SectionText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="15" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            </ControlTheme>
+
+            <ControlTheme x:Key="CaptionText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            </ControlTheme>
+
+            <ControlTheme x:Key="LabelText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="Medium" />
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                <Setter Property="Margin" Value="0,0,0,6" />
+            </ControlTheme>
+
+            <ControlTheme x:Key="BadgeText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontFeatures" Value="+tnum" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            </ControlTheme>
+
+            <!-- Цвет текста плашки изменения задаёт сама плашка через TextElement.Foreground -->
+            <ControlTheme x:Key="PillText" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="FontFeatures" Value="+tnum" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </ControlTheme>
+
+            <!-- ═════════ Контейнеры ═════════ -->
+            <ControlTheme x:Key="Card" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="BoxShadow" Value="0 1 3 0 #12000000" />
+            </ControlTheme>
+
+            <ControlTheme x:Key="Chip" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource SubtleBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="999" />
+                <Setter Property="Padding" Value="12,6" />
+            </ControlTheme>
+
+            <!-- Серая плашка: код валюты, счётчик -->
+            <ControlTheme x:Key="Badge" TargetType="Border">
+                <Setter Property="Background" Value="{DynamicResource NeutralSoftBrush}" />
+                <Setter Property="CornerRadius" Value="6" />
+                <Setter Property="Padding" Value="8,3" />
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </ControlTheme>
+
+            <!-- Форма плашки изменения курса, цвета задаются на месте -->
+            <ControlTheme x:Key="Pill" TargetType="Border">
+                <Setter Property="CornerRadius" Value="999" />
+                <Setter Property="Padding" Value="8,3,10,3" />
+                <Setter Property="HorizontalAlignment" Value="Right" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </ControlTheme>
+
+            <!-- Форма баннера уведомления, цвета задаются на месте -->
+            <ControlTheme x:Key="Banner" TargetType="Border">
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="14,10,8,10" />
+                <Setter Property="Margin" Value="0,12,0,0" />
+            </ControlTheme>
+
+            <!-- ═════════ Кнопки ═════════ -->
+            <ControlTheme x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="MinHeight" Value="36" />
+                <Setter Property="Padding" Value="16,0" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="Background" Value="{DynamicResource AccentButtonBackground}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBorderBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource AccentButtonForeground}" />
+
+                <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPointerOver}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBorderBrushPointerOver}" />
+                    <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPointerOver}" />
+                </Style>
+                <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundPressed}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBorderBrushPressed}" />
+                    <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundPressed}" />
+                </Style>
+                <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Background" Value="{DynamicResource AccentButtonBackgroundDisabled}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentButtonBorderBrushDisabled}" />
+                    <Setter Property="Foreground" Value="{DynamicResource AccentButtonForegroundDisabled}" />
+                </Style>
+            </ControlTheme>
+
+            <!-- Кнопка-иконка без фона: закрыть, очистить -->
+            <ControlTheme x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="CornerRadius" Value="6" />
+                <Setter Property="Padding" Value="6" />
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </ControlTheme>
+        </ResourceDictionary>
+    </Application.Resources>
 </Application>
