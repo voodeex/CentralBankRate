@@ -10,4 +10,4 @@ riderModule.iml
 *.DotSettings.user
 .DS_Store
 Thumbs.db
-config.json
+**/config.json
